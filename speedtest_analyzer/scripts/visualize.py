@@ -14,8 +14,11 @@ def parse_speedtest_log(log_file):
         # CSVファイルを読み込む
         df = pd.read_csv(log_file)
 
-        # Timestampをdatetime形式に変換
-        df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+        # Timestampをdatetime形式に変換（UTCとして解釈）
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], utc=True)
+        
+        # UTCからJSTに変換（UTC+9）
+        df["Timestamp"] = df["Timestamp"].dt.tz_convert('Asia/Tokyo')
 
         # Download/Uploadをbps（bits per second）からMbps（Megabits per second）に変換
         df["Download_Mbps"] = df["Download"] / 1_000_000
@@ -62,12 +65,12 @@ def visualize_speed_over_time(df, output_dir=None):
     )
 
     # X軸のフォーマット設定
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M", tz=df["Timestamp"].dt.tz))
     plt.gcf().autofmt_xdate()  # 日付ラベルを傾ける
 
     # グラフの設定
-    plt.title("Internet Speed Over Time", fontsize=16)
-    plt.xlabel("Timestamp", fontsize=12)
+    plt.title("Internet Speed Over Time (JST)", fontsize=16)
+    plt.xlabel("Timestamp (JST)", fontsize=12)
     plt.ylabel("Speed (Mbps)", fontsize=12)
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
